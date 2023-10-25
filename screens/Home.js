@@ -12,8 +12,6 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FontAwesome5 } from "@expo/vector-icons";
 
 export default function Home({ navigation: { navigate } }) {
-  console.log(ListOfFood);
-
   const [existingFavorites, setExistingFavorites] = useState([]);
 
   const generateItemId = (name, price) => `${name}-${price}`;
@@ -45,41 +43,53 @@ export default function Home({ navigation: { navigate } }) {
     />
   );
 
+  const updateFavorites = async (updatedFavorites) => {
+    setExistingFavorites(updatedFavorites);
+    await AsyncStorage.setItem(
+      "favoriteItems",
+      JSON.stringify(updatedFavorites)
+    );
+  };
+
   const Item = ({ name, price, img, existingFavorites }) => {
     const [isFavorite, setIsFavorite] = useState(
       existingFavorites.includes(generateItemId(name, price))
     );
-  
+
     const addToFavorites = async (name, price) => {
       try {
         const itemId = generateItemId(name, price);
         const updatedFavorites = [...existingFavorites];
-  
+
         if (existingFavorites.includes(itemId)) {
           const index = updatedFavorites.indexOf(itemId);
           updatedFavorites.splice(index, 1);
         } else {
           updatedFavorites.push(itemId);
         }
-  
-        setExistingFavorites(updatedFavorites);
-        await AsyncStorage.setItem("favoriteItems", JSON.stringify(updatedFavorites));
+
+        updateFavorites(updatedFavorites);
         setIsFavorite(updatedFavorites.includes(itemId));
       } catch (error) {
         console.error("Error adding/removing item to/from favorites: ", error);
       }
     };
-  
+
     return (
       <>
         <Pressable
           style={styles.foodContainer}
-          onPress={() => navigate("Detail", { name, price, img })}
+          onPress={() =>
+            navigate("Detail", {
+              name,
+              price,
+              img,
+              existingFavorites: existingFavorites,
+              updateFavorites: updateFavorites, 
+            })
+          }
         >
-          <Image
-            style={styles.image}
-            source={{ uri: img }}
-          />
+          <Image style={styles.image} source={{ uri: img }} />
           <View style={styles.foodDetail}>
             <View
               style={{ display: "flex", flexDirection: "row", marginBottom: 6 }}
@@ -98,6 +108,7 @@ export default function Home({ navigation: { navigate } }) {
       </>
     );
   };
+
   return (
     <View style={styles.container}>
       <FlatList
@@ -107,12 +118,11 @@ export default function Home({ navigation: { navigate } }) {
       ></FlatList>
     </View>
   );
-
 }
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 28,
+    padding: 30,
   },
   innerContainer: { display: "flex", flexDirection: "row" },
   foodContainer: {
