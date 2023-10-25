@@ -10,7 +10,6 @@ const Stack = createNativeStackNavigator();
 export default function HomeStack() {
   return (
     <Stack.Navigator
-      initialRouteName="Home"
       screenOptions={{ headerStyle: { backgroundColor: "#FBDABB" } }}
     >
       <Stack.Screen name="Home" component={Home} />

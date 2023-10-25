@@ -1,4 +1,4 @@
-import React from "react";
+import { useState, useEffect } from "react";
 import {
   Pressable,
   StyleSheet,
@@ -8,40 +8,96 @@ import {
   Text,
 } from "react-native";
 import ListOfFood from "../data/ListOfFood";
-
-import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FontAwesome5 } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
 
 export default function Home({ navigation: { navigate } }) {
-  //const navigation = useNavigation();
+  console.log(ListOfFood);
 
-  const renderItem = ({ item }) => <Item name={item.name} price={item.price} />;
+  const [existingFavorites, setExistingFavorites] = useState([]);
 
-  const Item = ({ name, price }) => (
-    <>
-      <Pressable
-        style={styles.foodContainer}
-        onPress={() => navigate("Detail", { name, price })}
-      >
-        <Image
-          style={styles.image}
-          source={{
-            uri: "https://w.wallhaven.cc/full/yj/wallhaven-yjyrz7.jpg",
-          }}
-        />
-        <View style={styles.foodDetail}>
-          <View
-            style={{ display: "flex", flexDirection: "row", marginBottom: 6 }}
-          >
-            <Text style={styles.name}>{name}</Text>
-            <Text style={styles.price}>{price}</Text>
-          </View>
-          <FontAwesome5 name="heart" size={22} color="black" />
-        </View>
-      </Pressable>
-    </>
+  const generateItemId = (name, price) => `${name}-${price}`;
+
+  const fetchExistingFavorites = async () => {
+    try {
+      const storedItemIds = await AsyncStorage.getItem("favoriteItems");
+      if (storedItemIds) {
+        const itemIds = JSON.parse(storedItemIds);
+        setExistingFavorites(itemIds);
+      } else {
+        setExistingFavorites([]);
+      }
+    } catch (error) {
+      console.error("Error fetching existing favorites: ", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchExistingFavorites();
+  }, []);
+
+  const renderItem = ({ item }) => (
+    <Item
+      name={item.name}
+      price={item.price}
+      img={item.img}
+      existingFavorites={existingFavorites}
+    />
   );
+
+  const Item = ({ name, price, img, existingFavorites }) => {
+    const [isFavorite, setIsFavorite] = useState(
+      existingFavorites.includes(generateItemId(name, price))
+    );
+  
+    const addToFavorites = async (name, price) => {
+      try {
+        const itemId = generateItemId(name, price);
+        const updatedFavorites = [...existingFavorites];
+  
+        if (existingFavorites.includes(itemId)) {
+          const index = updatedFavorites.indexOf(itemId);
+          updatedFavorites.splice(index, 1);
+        } else {
+          updatedFavorites.push(itemId);
+        }
+  
+        setExistingFavorites(updatedFavorites);
+        await AsyncStorage.setItem("favoriteItems", JSON.stringify(updatedFavorites));
+        setIsFavorite(updatedFavorites.includes(itemId));
+      } catch (error) {
+        console.error("Error adding/removing item to/from favorites: ", error);
+      }
+    };
+  
+    return (
+      <>
+        <Pressable
+          style={styles.foodContainer}
+          onPress={() => navigate("Detail", { name, price, img })}
+        >
+          <Image
+            style={styles.image}
+            source={{ uri: img }}
+          />
+          <View style={styles.foodDetail}>
+            <View
+              style={{ display: "flex", flexDirection: "row", marginBottom: 6 }}
+            >
+              <Text style={styles.name}>{name}</Text>
+              <Text style={styles.price}>{price}</Text>
+            </View>
+            <FontAwesome5
+              name="heart"
+              size={22}
+              color={isFavorite ? "red" : "black"}
+              onPress={() => addToFavorites(name, price)}
+            />
+          </View>
+        </Pressable>
+      </>
+    );
+  };
   return (
     <View style={styles.container}>
       <FlatList
@@ -51,8 +107,8 @@ export default function Home({ navigation: { navigate } }) {
       ></FlatList>
     </View>
   );
-}
 
+}
 const styles = StyleSheet.create({
   container: {
     flex: 1,
