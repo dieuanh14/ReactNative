@@ -17,7 +17,6 @@ export default function Favorite() {
     const fetchFavoriteItems = async () => {
       try {
         const storedItemIds = await AsyncStorage.getItem("favoriteItems");
-        console.log(storedItemIds);
         if (storedItemIds) {
           const itemIds = JSON.parse(storedItemIds);
           const items = ListOfFood.filter((item) =>
@@ -33,7 +32,7 @@ export default function Favorite() {
     fetchFavoriteItems();
   }, [favoriteItems]);
 
-  const generateItemId = (name, price, img) => `${name}-${price}`;
+  const generateItemId = (name, price) => `${name}-${price}`;
 
   return (
     <Center>
