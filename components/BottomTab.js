@@ -2,7 +2,7 @@ import * as React from "react";
 
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Favorite from "../screens/Favorite";
-
+import Detail from "../screens/Detail";
 import { FontAwesome5 } from "@expo/vector-icons";
 import HomeStack from "./HomeStack";
 
@@ -22,6 +22,7 @@ export default function BottomTab() {
         name="Home"
         component={HomeStack}
         options={{
+          unmountOnBlur: true,
           tabBarIcon: ({ color }) => (
             <FontAwesome5 name="home" size={24} color={color} />
           ),
@@ -34,6 +35,15 @@ export default function BottomTab() {
           tabBarIcon: ({ color }) => (
             <FontAwesome5 name="heart" size={24} color={color} />
           ),
+        }}
+      />
+      <Tab.Screen
+        name="Detail"
+        component={Detail}
+        options={{
+          tabBarItemStyle: { display: "none" },
+
+          unmountOnBlur: true,
         }}
       />
     </Tab.Navigator>

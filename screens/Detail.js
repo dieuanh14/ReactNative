@@ -1,50 +1,61 @@
-import { StyleSheet, Pressable } from "react-native";
-import { useEffect } from "react";
+import React, { useState, useEffect } from "react";
+import { TouchableOpacity } from "react-native";
 import { useIsFocused } from "@react-navigation/native";
-import { FontAwesome5 } from "@expo/vector-icons";
-import { useState, React } from "react";
+import { AntDesign } from "@expo/vector-icons";
+
 import {
   Box,
-  Heading,
   AspectRatio,
-  Image,
-  Text,
   Center,
   HStack,
+  Image,
   Stack,
+  Text,
+  Heading,
+  Flex,
 } from "native-base";
+
 export default function Detail({ route }) {
-  const { name, price, img, info, type, existingFavorites, updateFavorites } =
-    route.params;
+  const {
+    name,
+    price,
+    image,
+    weight,
+    rating,
+    color,
+    bonus,
+    origin,
+    existingFavorites,
+    updateFavorites,
+  } = route.params;
   const isFocused = useIsFocused();
 
-  useEffect(() => {
-    if (isFocused) {
-    }
-  }, [isFocused, existingFavorites]);
   const generateItemId = (name, price) => `${name}-${price}`;
 
   const [isFavorite, setIsFavorite] = useState(
     existingFavorites.includes(generateItemId(name, price))
   );
-
   const addToFavorites = () => {
-    const itemId = generateItemId(name, price);
-    const updatedFavorites = [...existingFavorites];
+    try {
+      const itemId = generateItemId(name, price);
+      const updatedFavorites = [...existingFavorites];
 
-    if (!existingFavorites.includes(itemId)) {
-      updatedFavorites.push(itemId);
-    } else {
-      const index = updatedFavorites.indexOf(itemId);
-      updatedFavorites.splice(index, 1);
+      if (!existingFavorites.includes(itemId)) {
+        updatedFavorites.push(itemId);
+      } else {
+        const index = updatedFavorites.indexOf(itemId);
+        updatedFavorites.splice(index, 1);
+      }
+
+      updateFavorites(updatedFavorites);
+      setIsFavorite(!isFavorite); 
+    } catch (error) {
+      console.error("Error adding/removing item to/from favorites: ", error);
     }
-
-    updateFavorites(updatedFavorites);
-    setIsFavorite(!isFavorite);
   };
 
   return (
-    <Box alignItems="center" mt="50">
+    <Box alignItems="center" mt={20}>
       <Box
         maxW="80"
         rounded="lg"
@@ -66,9 +77,8 @@ export default function Detail({ route }) {
         <Box>
           <AspectRatio w="100%" ratio={16 / 9}>
             <Image
-              style={{ height: 20, width: 50, alignItems: "center" }}
               source={{
-                uri: img,
+                uri: image,
               }}
               alt="image"
             />
@@ -88,7 +98,7 @@ export default function Detail({ route }) {
             px="3"
             py="1.5"
           >
-            {price}
+            {rating}
           </Center>
         </Box>
         <Stack p="4" space={3}>
@@ -108,27 +118,30 @@ export default function Detail({ route }) {
               ml="-0.5"
               mt="-1"
             >
-              {type}
+              Price: {price} VND
             </Text>
           </Stack>
-          <Text fontWeight="400">{info}</Text>
+          <Text fontWeight="400">Bonus: {bonus}</Text>
           <HStack alignItems="center" space={4} justifyContent="space-between">
             <HStack alignItems="center">
-              <Text
-                color="coolGray.600"
-                _dark={{
-                  color: "warmGray.200",
-                }}
-                fontWeight="400"
-              >
-                <Pressable style={styles.price} onPress={addToFavorites}>
-                  <FontAwesome5
-                    name="heart"
+              <Flex justifyContent="space-between">
+                <Text
+                  color="coolGray.600"
+                  _dark={{
+                    color: "warmGray.200",
+                  }}
+                  fontWeight="400"
+                >
+                  {color}
+                </Text>
+                <TouchableOpacity onPress={addToFavorites}>
+                  <AntDesign
+                    name="hearto"
                     size={24}
                     color={isFavorite ? "red" : "black"}
                   />
-                </Pressable>
-              </Text>
+                </TouchableOpacity>{" "}
+              </Flex>
             </HStack>
           </HStack>
         </Stack>
@@ -136,48 +149,3 @@ export default function Detail({ route }) {
     </Box>
   );
 }
-
-const styles = StyleSheet.create({
-  foodCard: {
-    marginTop: 70,
-    display: "flex",
-    flexDirection: "column",
-    justifyContent: "center",
-    borderRadius: 20,
-    width: 320,
-    overflow: "hidden",
-    alignSelf: "center",
-    backgroundColor: "white",
-    shadowColor: "#000000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.19,
-    shadowRadius: 5.62,
-    elevation: 6,
-  },
-  // image: {
-  //   width: "100%",
-  //   height: 20,
-  // },
-  title: {
-    fontSize: 34,
-    fontWeight: "bold",
-    padding: 12,
-  },
-  info: { padding: 12 },
-  price: {
-    color: "red",
-    fontSize: 20,
-    paddingBottom: 22,
-    padding: 12,
-  },
-  footer: {
-    display: "flex",
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingLeft: 20,
-    paddingRight: 20,
-  },
-});

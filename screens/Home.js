@@ -2,40 +2,23 @@ import React, { useState, useEffect } from "react";
 import {
   Pressable,
   StyleSheet,
-  FlatList,
+  SectionList,
   Image,
   View,
   Text,
 } from "react-native";
-import ListOfFood from "../data/ListOfFood";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { FontAwesome5 } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Categories } from "../data/db";
+import { Flex } from "native-base";
 
 export default function Home({ navigation: { navigate } }) {
-  const [existingFavorites, setExistingFavorites] = useState([]);
-  const [data, setData] = useState(ListOfFood);
-  const [filteredData, setFilteredData] = useState(data);
-  const [filterType, setFilterType] = useState(null);
-  const [activeButton, setActiveButton] = useState("All");
+  const CategoriesForSectionList = Categories.map((category) => ({
+    title: category.categoryName,
+    data: category.items,
+  }));
 
-  const handleFilter = (type) => {
-    console.log("Filtering by type:", type);
-    if (type === "All") {
-      setFilteredData(data);
-      setFilterType(null);
-      setActiveButton("All");
-    } else {
-      const filtered = data.filter((item) => item.type === type);
-      console.log(filtered);
-      setFilteredData(filtered);
-      setFilterType(type);
-      if (type === "fruit") {
-        setActiveButton("Fruit");
-      } else {
-        setActiveButton("Vegetable");
-      }
-    }
-  };
+  const [existingFavorites, setExistingFavorites] = useState([]);
 
   const generateItemId = (name, price) => `${name}-${price}`;
 
@@ -59,12 +42,9 @@ export default function Home({ navigation: { navigate } }) {
 
   const renderItem = ({ item }) => (
     <Item
-      name={item.name}
-      price={item.price}
-      img={item.img}
-      info={item.info}
-      type={item.type}
+      item={item}
       existingFavorites={existingFavorites}
+      navigate={navigate}
     />
   );
 
@@ -76,14 +56,14 @@ export default function Home({ navigation: { navigate } }) {
     );
   };
 
-  const Item = ({ name, price, img, existingFavorites, info, type }) => {
-    const [isFavorite, setIsFavorite] = useState(
-      existingFavorites.includes(generateItemId(name, price))
+  const Item = ({ item, existingFavorites, navigate }) => {
+    const isFavorite = existingFavorites.includes(
+      generateItemId(item.name, item.price)
     );
 
-    const addToFavorites = async (name, price) => {
+    const addToFavorites = async () => {
       try {
-        const itemId = generateItemId(name, price);
+        const itemId = generateItemId(item.name, item.price);
         const updatedFavorites = [...existingFavorites];
 
         if (existingFavorites.includes(itemId)) {
@@ -94,127 +74,80 @@ export default function Home({ navigation: { navigate } }) {
         }
 
         updateFavorites(updatedFavorites);
-        setIsFavorite(updatedFavorites.includes(itemId));
       } catch (error) {
         console.error("Error adding/removing item to/from favorites: ", error);
       }
     };
-    console.log("List of Food:", ListOfFood);
 
     return (
       <Pressable
         style={styles.foodContainer}
         onPress={() =>
           navigate("Detail", {
-            name,
-            price,
-            img,
-            info,
-            type,
+            name: item.name,
+            price: item.price,
+            image: item.image,
+            weight: item.weight,
+            rating: item.rating,
+            color: item.color,
+            bonus: item.bonus,
+            origin: item.origin,
             existingFavorites,
             updateFavorites,
           })
         }
       >
-        <Image style={styles.image} source={{ uri: img }} />
-        <View style={styles.foodDetail}>
-          <View
-            style={{ display: "flex", flexDirection: "row", marginBottom: 6 }}
+        <Image style={styles.image} source={{ uri: item.image }} />
+        <Flex
+          flexDirection="column"
+          justifyContent="flex-start"
+          gap={4}
+        >
+          <Flex
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              flexDirection: "row",
+            }}
           >
-          <View style={{display:'flex',justifyContent:"space-evenly",flexDirection:'row'}}>
-            <Text style={styles.name}>{name}</Text>
-            <Text style={styles.price}>{price}</Text>
-            </View>
-          </View>
+            <Text style={styles.name}>{item.name}</Text>
+            <Text style={styles.price}>{item.price} VND</Text>
+          </Flex>
+          <Text >Origin: {item.origin} </Text>
+
           <FontAwesome5
             name="heart"
             size={22}
             color={isFavorite ? "red" : "black"}
-            onPress={() => addToFavorites(name, price)}
+            onPress={addToFavorites}
           />
-        </View>
+        </Flex>
       </Pressable>
     );
   };
 
+  const renderSectionHeader = ({ section }) => (
+    <Text style={styles.sectionHeader}>{section.title}</Text>
+  );
+
   return (
-    <>
-      <View
-        style={{
-          display: "flex",
-          flexDirection: "row",
-          justifyContent: "space-around",
-          marginTop: 40,
-        }}
-      >
-        <Pressable
-          title="All"
-          onPress={() => handleFilter("All")}
-          style={[
-            styles.filterButton,
-            activeButton === "All" && styles.activeFilterButton,
-          ]}
-        >
-          <Text style={{ textAlign: "center", fontWeight: "bold" }}>All</Text>
-        </Pressable>
-        <Pressable
-          title="Filter Fruit"
-          onPress={() => handleFilter("fruit")}
-          style={[
-            styles.filterButton,
-            activeButton === "Fruit" && styles.activeFilterButton,
-          ]}
-        >
-          <Text style={{ textAlign: "center", fontWeight: "bold" }}>Fruit</Text>
-        </Pressable>
-        <Pressable
-          title="Filter Food"
-          onPress={() => handleFilter("vegetable")}
-          style={[
-            styles.filterButton,
-            activeButton === "Vegetable" && styles.activeFilterButton,
-          ]}
-        >
-          <Text style={{ textAlign: "center", fontWeight: "bold" }}>
-            Vegetable
-          </Text>
-        </Pressable>
-      </View>
-      <View style={styles.container}>
-        <FlatList
-          data={filteredData}
-          keyExtractor={(item) => item.id}
-          renderItem={renderItem}
-        />
-      </View>
-    </>
+    <SectionList
+      sections={CategoriesForSectionList}
+      keyExtractor={(item, index) => item.name + index}
+      renderItem={renderItem}
+      renderSectionHeader={({ section: { title } }) => (
+        <Text style={styles.sectionHeader}>{title}</Text>
+      )}
+    />
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 28,
-  },
-  filterButton: {
-    borderWidth: 1,
-    borderColor: "transparent",
-    width: 100,
-    padding: 12,
-    borderRadius: 12,
-  },
-  activeFilterButton: {
-    backgroundColor: "#F8C4B4",
-  },
-  innerContainer: { display: "flex", flexDirection: "row" },
   foodContainer: {
     display: "flex",
     flexDirection: "row",
     columnGap: 20,
-    borderRadius: 24,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "#F2D8D8",
     marginTop: 18,
   },
   image: {
@@ -234,4 +167,10 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   price: { color: "green", fontSize: 20, marginLeft: 20 },
+  sectionHeader: {
+    fontSize: 24,
+    fontWeight: "bold",
+    backgroundColor: "#F8C4B4",
+    padding: 8,
+  },
 });
